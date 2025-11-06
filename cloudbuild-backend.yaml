@@ -35,4 +35,4 @@ images:
 substitutions:
   _SERVICE_NAME: 'sumadots-backend' # <-- Nuevo nombre
   _REGION: 'europe-west1'
-  _REPO_NAME: 'sumadots-frontend' # Podemos usar el mismo repo de Artifact Registry
+  _REPO_NAME: 'sumadots-backend' # Podemos usar el mismo repo de Artifact Registry
