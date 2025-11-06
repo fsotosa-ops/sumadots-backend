@@ -14,10 +14,13 @@ const app = express();
 // --- Configuración de Middlewares ---
 
 // 1. Habilita CORS (Cross-Origin Resource Sharing)
-app.use(cors({
-  // Esta debe ser la URL exacta donde corre tu app de React
-  origin: 'https://sumadots-frontend-website-eimnykyv5q-ew.a.run.app/' 
-}));
+const allowedOrigins = [
+  'https://sumadots-frontend-website-eimnykyv5q-ew.a.run.app',
+  'https://www.sumadots.com',
+  'https://sumadots.com',
+   // Tu frontend en producción
+  'http://localhost:5173'  // Tu frontend local de Vite (ajusta el puerto si es otro)
+];
 
 // 2. Habilita que Express pueda "leer" JSON del body de las peticiones
 app.use(express.json());
