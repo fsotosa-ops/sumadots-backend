@@ -1,0 +1,38 @@
+steps:
+  # 1. Construir la imagen de Docker (apuntando al Dockerfile del backend)
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO_NAME}/${_SERVICE_NAME}:${COMMIT_SHA}'
+      - '.' # El contexto de la compilación es la carpeta 'backend'
+    dir: 'backend' # ¡Importante! Ejecuta este paso dentro de la carpeta 'backend'
+
+  # 2. Subir la imagen a Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO_NAME}/${_SERVICE_NAME}:${COMMIT_SHA}'
+
+  # 3. Desplegar la imagen en Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - '${_SERVICE_NAME}' # El nombre de tu *nuevo* servicio de backend
+      - '--image'
+      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO_NAME}/${_SERVICE_NAME}:${COMMIT_SHA}'
+      - '--region'
+      - '${_REGION}'
+      - '--platform'
+      - 'managed'
+      - '--allow-unauthenticated' # Permite que tu frontend lo llame
+
+images:
+  - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO_NAME}/${_SERVICE_NAME}:${COMMIT_SHA}'
+
+substitutions:
+  _SERVICE_NAME: 'sumadots-backend' # <-- Nuevo nombre
+  _REGION: 'europe-west1'
+  _REPO_NAME: 'sumadots-frontend' # Podemos usar el mismo repo de Artifact Registry

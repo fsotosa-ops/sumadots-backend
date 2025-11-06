@@ -1,0 +1,15 @@
+# Dependencias
+# Ignora la carpeta gigante de paquetes descargados
+node_modules/
+
+# Archivos de Entorno (¡El más importante!)
+# Contiene tus claves secretas de Airtable
+.env
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+*.log
+
+# Archivos del sistema operativo
+.DS_Store
