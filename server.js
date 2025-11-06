@@ -14,13 +14,26 @@ const app = express();
 // --- Configuración de Middlewares ---
 
 // 1. Habilita CORS (Cross-Origin Resource Sharing)
+// ¡¡ESTA ES LA SECCIÓN MODIFICADA!!
 const allowedOrigins = [
-  'https://sumadots-frontend-website-eimnykyv5q-ew.a.run.app',
-  'https://www.sumadots.com',
+  'https://sumadots-frontend-website-eimnykyv5q-ew.a.run.app', // Tu frontend en producción
   'https://sumadots.com',
-   // Tu frontend en producción
-  'http://localhost:5173'  // Tu frontend local de Vite (ajusta el puerto si es otro)
+  'https://www.sumadots.com',
+  'http://localhost:5173', // Tu frontend local de Vite (ajusta el puerto si es otro)
+  'http://localhost:3000'  // Otro puerto común de desarrollo
 ];
+
+app.use(cors({
+  origin: function (origin, callback) {
+    // Permite peticiones si están en la lista o si no tienen origen (como Postman)
+    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Origen no permitido por CORS'));
+    }
+  }
+}));
+// --- FIN DE LA SECCIÓN MODIFICADA ---
 
 // 2. Habilita que Express pueda "leer" JSON del body de las peticiones
 app.use(express.json());
