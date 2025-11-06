@@ -1,12 +1,11 @@
 steps:
-  # 1. Construir la imagen de Docker (apuntando al Dockerfile del backend)
+  # 1. Construir la imagen de Docker
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'build'
       - '-t'
       - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO_NAME}/${_SERVICE_NAME}:${COMMIT_SHA}'
-      - '.' # El contexto de la compilación es la carpeta 'backend'
-    dir: 'backend' # ¡Importante! Ejecuta este paso dentro de la carpeta 'backend'
+      - '.'
 
   # 2. Subir la imagen a Artifact Registry
   - name: 'gcr.io/cloud-builders/docker'
@@ -14,25 +13,44 @@ steps:
       - 'push'
       - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO_NAME}/${_SERVICE_NAME}:${COMMIT_SHA}'
 
-  # 3. Desplegar la imagen en Cloud Run
+  # 3. Desplegar en Cloud Run CON los secretos
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: gcloud
     args:
       - 'run'
       - 'deploy'
-      - '${_SERVICE_NAME}' # El nombre de tu *nuevo* servicio de backend
+      - '${_SERVICE_NAME}'
       - '--image'
       - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO_NAME}/${_SERVICE_NAME}:${COMMIT_SHA}'
       - '--region'
       - '${_REGION}'
       - '--platform'
       - 'managed'
-      - '--allow-unauthenticated' # Permite que tu frontend lo llame
+      - '--allow-unauthenticated'
+      # --- ¡AQUÍ ESTÁ LA MAGIA! ---
+      # Inyecta los secretos como variables de entorno
+      - '--set-env-vars=AIRTABLE_API_KEY=$$AIRTABLE_API_KEY,AIRTABLE_BASE_ID=$$AIRTABLE_BASE_ID,AIRTABLE_TABLE_ID=$$AIRTABLE_TABLE_ID'
+    
+    # Le dice a Cloud Build que los valores $$ de arriba vienen de Secret Manager
+    secretEnv: ['AIRTABLE_API_KEY', 'AIRTABLE_BASE_ID', 'AIRTABLE_TABLE_ID']
 
+# Dónde se guardará la imagen
 images:
   - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO_NAME}/${_SERVICE_NAME}:${COMMIT_SHA}'
 
+# Variables de sustitución
 substitutions:
-  _SERVICE_NAME: 'sumadots-backend' # <-- Nuevo nombre
+  _SERVICE_NAME: 'sumadots-backend'
   _REGION: 'europe-west1'
-  _REPO_NAME: 'sumadots-backend' # Podemos usar el mismo repo de Artifact Registry
+  _REPO_NAME: 'sumadots-backend' # (Puedes usar el mismo repo de Artifacts)
+
+# --- ¡ESTA SECCIÓN ES NUEVA! ---
+# Define de dónde sacar los secretos
+availableSecrets:
+  secretManager:
+    - versionName: projects/$PROJECT_ID/secrets/AIRTABLE_API_KEY/versions/latest
+      env: 'AIRTABLE_API_KEY' # El nombre que usamos en 'secretEnv'
+    - versionName: projects/$PROJECT_ID/secrets/AIRTABLE_BASE_ID/versions/latest
+      env: 'AIRTABLE_BASE_ID'
+    - versionName: projects/$PROJECT_ID/secrets/AIRTABLE_TABLE_ID/versions/latest
+      env: 'AIRTABLE_TABLE_ID'
